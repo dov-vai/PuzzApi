@@ -4,8 +4,9 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using PuzzAPI.RoomManager;
 using PuzzAPI.Types;
-using PuzzAPI.WebSocketConnectionManager;
+using Host = PuzzAPI.Types.Host;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<IWebSocketConnectionManager, WebSocketConnectionManager>();
+builder.Services.AddSingleton<IRoomManager, RoomManager>();
 
 var app = builder.Build();
 
@@ -27,7 +28,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.Map("/ws", async (HttpContext context, IWebSocketConnectionManager manager) =>
+app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
 {
     if (!context.WebSockets.IsWebSocketRequest)
     {
@@ -35,29 +36,31 @@ app.Map("/ws", async (HttpContext context, IWebSocketConnectionManager manager) 
         return;
     }
 
-    if (context.Request.Query.ContainsKey("host"))
-    {
-        var success = bool.TryParse(context.Request.Query["host"], out var host);
-
-        if (!success) return;
-    }
-
     using var ws = await context.WebSockets.AcceptWebSocketAsync();
 
-    var id = manager.AddSocket(ws);
+    string? roomId = null;
+    string? peerId = null;
 
-    await manager.SendMessageAsync(id, JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = id }));
-
-    // tell sockets to prepare a peer for connection
-    var msg = JsonSerializer.Serialize(new ReceiveInit
+    if (context.Request.Query.ContainsKey("join"))
     {
-        Type = "receiveInit",
-        SocketId = id
-    });
-    await manager.BroadcastAsync(msg, ws);
-    //
+        roomId = context.Request.Query["join"][0];
 
-    var curName = context.Request.Query["name"];
+        if (roomId != null)
+        {
+            peerId = manager.AddPeer(roomId, ws);
+            await manager.SendMessageAsync(
+                roomId,
+                peerId,
+                JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
+            );
+
+            await manager.BroadcastAsync(
+                roomId,
+                JsonSerializer.Serialize(new ReceiveInit { Type = "receiveInit", SocketId = peerId }),
+                ws
+            );
+        }
+    }
 
     await manager.ReceiveMessageAsync(ws, async (result, buf) =>
     {
@@ -69,6 +72,14 @@ app.Map("/ws", async (HttpContext context, IWebSocketConnectionManager manager) 
             if (type != null)
                 switch (type)
                 {
+                    case "host":
+                    {
+                        var data = JsonSerializer.Deserialize<Host>(msg);
+
+                        if (data != null) roomId = manager.CreateRoom(data.Title, ws);
+
+                        break;
+                    }
                     case "signal":
                     {
                         var data = JsonSerializer.Deserialize<RtcSignal>(msg);
@@ -79,9 +90,9 @@ app.Map("/ws", async (HttpContext context, IWebSocketConnectionManager manager) 
                             {
                                 Type = "signal",
                                 Signal = data.Signal,
-                                SocketId = id
+                                SocketId = peerId
                             });
-                            await manager.SendMessageAsync(data.SocketId, signalData);
+                            await manager.SendMessageAsync(roomId, data.SocketId, signalData);
                         }
 
                         break;
@@ -94,9 +105,9 @@ app.Map("/ws", async (HttpContext context, IWebSocketConnectionManager manager) 
                             var initData = JsonSerializer.Serialize(new SendInit
                             {
                                 Type = "sendInit",
-                                SocketId = id
+                                SocketId = peerId
                             });
-                            await manager.SendMessageAsync(data.SocketId, initData);
+                            await manager.SendMessageAsync(roomId, data.SocketId, initData);
                         }
 
                         break;
@@ -105,16 +116,16 @@ app.Map("/ws", async (HttpContext context, IWebSocketConnectionManager manager) 
         }
         else if (result.MessageType == WebSocketMessageType.Close || ws.State == WebSocketState.Aborted)
         {
-            Debug.WriteLine($"Removing socket {id}");
-            await manager.RemoveSocketAsync(id, result.CloseStatus, result.CloseStatusDescription);
+            Debug.WriteLine($"Removing socket {peerId}");
+            await manager.RemoveSocketAsync(roomId, peerId, result.CloseStatus, result.CloseStatusDescription);
 
             var removeData = JsonSerializer.Serialize(new RemovePeer
             {
                 Type = "removePeer",
-                SocketId = id
+                SocketId = peerId
             });
 
-            await manager.BroadcastAsync(removeData);
+            await manager.BroadcastAsync(roomId, removeData);
         }
     });
 });
