@@ -61,6 +61,10 @@ public class RoomManager : IRoomManager
         {
             room?.Peers.Remove(peer);
             await peer.Socket.CloseAsync(closeStatus.Value, closeStatusDescription, CancellationToken.None);
+            if (room?.Peers.Count == 0)
+            {
+                _rooms.TryRemove(id, out _);
+            }
         }
     }
 
