@@ -63,16 +63,14 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                         var data = JsonSerializer.Deserialize<Host>(msg);
                         if (data != null)
                         {
-                            var success = manager.CreateRoom(data.Title, ws, out roomId, out peerId);
+                            var success = manager.CreateRoom(data.Title, data.Public, ws, out roomId, out peerId);
 
                             if (success)
-                            {
                                 await manager.SendMessageAsync(
                                     roomId,
                                     peerId,
                                     JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
                                 );
-                            }
                         }
 
                         break;
@@ -87,11 +85,12 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
 
                             if (!success)
                             {
-                                await ws.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Provided room ID does not exist",
+                                await ws.CloseAsync(WebSocketCloseStatus.InvalidPayloadData,
+                                    "Provided room ID does not exist",
                                     CancellationToken.None);
                                 return;
                             }
-                            
+
                             await manager.SendMessageAsync(
                                 data.RoomId,
                                 peerId,
@@ -104,7 +103,20 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                                 ws
                             );
                         }
-                        
+
+                        break;
+                    }
+                    case "publicRooms":
+                    {
+                        var data = JsonSerializer.Serialize(new PublicRooms
+                        {
+                            Type = "publicRooms",
+                            Rooms = manager.GetPublicRooms()
+                        });
+
+                        var buffer = Encoding.UTF8.GetBytes(data);
+                        var arraySegment = new ArraySegment<byte>(buffer, 0, buffer.Length);
+                        await ws.SendAsync(arraySegment, WebSocketMessageType.Text, true, CancellationToken.None);
                         break;
                     }
                     case "signal":

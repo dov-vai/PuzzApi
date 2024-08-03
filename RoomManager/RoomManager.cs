@@ -9,13 +9,14 @@ public class RoomManager : IRoomManager
 {
     private readonly ConcurrentDictionary<string, Room.Room> _rooms = new();
 
-    public bool CreateRoom(string title, WebSocket socket, out string? roomId, out string? peerId)
+    public bool CreateRoom(string title, bool publicRoom, WebSocket socket, out string? roomId, out string? peerId)
     {
         var host = new Peer { Id = Guid.NewGuid().ToString(), Socket = socket };
         var room = new Room.Room
         {
             Id = Guid.NewGuid().ToString(),
             Title = title,
+            Public = publicRoom,
             Host = host,
             Peers = new List<Peer>()
         };
@@ -116,6 +117,18 @@ public class RoomManager : IRoomManager
             var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             handleMessage(result, buffer);
         }
+    }
+
+    public IEnumerable<PublicRoom> GetPublicRooms()
+    {
+        return _rooms.Values
+            .Where(r => r.Public)
+            .Select(r => new PublicRoom
+            {
+                Id = r.Id,
+                Title = r.Title,
+                PlayerCount = r.Peers.Count
+            });
     }
 
     public int GetCount()
