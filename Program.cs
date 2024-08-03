@@ -42,36 +42,6 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
     string? peerId = null;
 
     // TODO: switch to state machine pattern
-    if (context.Request.Query.ContainsKey("join"))
-    {
-        roomId = context.Request.Query["join"][0];
-
-        if (roomId != null)
-        {
-            var success = manager.AddPeer(roomId, ws, out peerId);
-
-            if (!success)
-            {
-                await ws.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Provided room ID does not exist",
-                    CancellationToken.None);
-                return;
-            }
-
-
-            await manager.SendMessageAsync(
-                roomId,
-                peerId,
-                JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
-            );
-
-            await manager.BroadcastAsync(
-                roomId,
-                JsonSerializer.Serialize(new ReceiveInit { Type = "receiveInit", SocketId = peerId }),
-                ws
-            );
-        }
-    }
-
     await manager.ReceiveMessageAsync(ws, async (result, buf) =>
     {
         if (result.MessageType == WebSocketMessageType.Text)
@@ -105,6 +75,36 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                             }
                         }
 
+                        break;
+                    }
+                    case "join":
+                    {
+                        var data = JsonSerializer.Deserialize<Join>(msg);
+
+                        if (data != null)
+                        {
+                            var success = manager.AddPeer(data.RoomId, ws, out peerId);
+
+                            if (!success)
+                            {
+                                await ws.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Provided room ID does not exist",
+                                    CancellationToken.None);
+                                return;
+                            }
+                            
+                            await manager.SendMessageAsync(
+                                data.RoomId,
+                                peerId,
+                                JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
+                            );
+
+                            await manager.BroadcastAsync(
+                                data.RoomId,
+                                JsonSerializer.Serialize(new ReceiveInit { Type = "receiveInit", SocketId = peerId }),
+                                ws
+                            );
+                        }
+                        
                         break;
                     }
                     case "signal":
