@@ -9,7 +9,7 @@ public class RoomManager : IRoomManager
 {
     private readonly ConcurrentDictionary<string, Room.Room> _rooms = new();
 
-    public string CreateRoom(string title, WebSocket socket)
+    public bool CreateRoom(string title, WebSocket socket, out string? roomId, out string? peerId)
     {
         var host = new Peer { Id = Guid.NewGuid().ToString(), Socket = socket };
         var room = new Room.Room
@@ -21,12 +21,21 @@ public class RoomManager : IRoomManager
         };
         room.Peers.Add(host);
 
-        _rooms.TryAdd(room.Id, room);
+        var success = _rooms.TryAdd(room.Id, room);
 
-        return room.Id;
+        roomId = null;
+        peerId = null;
+
+        if (success)
+        {
+            roomId = room.Id;
+            peerId = room.Host.Id;
+        }
+
+        return success;
     }
 
-    public string AddPeer(string id, WebSocket socket)
+    public bool AddPeer(string id, WebSocket socket, out string? peerId)
     {
         var peer = new Peer
         {
@@ -34,11 +43,17 @@ public class RoomManager : IRoomManager
             Socket = socket
         };
 
-        _rooms.TryGetValue(id, out var room);
+        var success = _rooms.TryGetValue(id, out var room);
 
-        room?.Peers.Add(peer);
+        peerId = null;
 
-        return peer.Id;
+        if (room != null)
+        {
+            room.Peers.Add(peer);
+            peerId = peer.Id;
+        }
+
+        return success;
     }
 
     public async Task RemoveSocketAsync(string id, string peerId)
@@ -55,10 +70,7 @@ public class RoomManager : IRoomManager
         {
             room?.Peers.Remove(peer);
             await peer.Socket.CloseAsync(closeStatus.Value, closeStatusDescription, CancellationToken.None);
-            if (room?.Peers.Count == 0)
-            {
-                _rooms.TryRemove(id, out _);
-            }
+            if (room?.Peers.Count == 0) _rooms.TryRemove(id, out _);
         }
     }
 

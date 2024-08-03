@@ -41,13 +41,23 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
     string? roomId = null;
     string? peerId = null;
 
+    // TODO: switch to state machine pattern
     if (context.Request.Query.ContainsKey("join"))
     {
         roomId = context.Request.Query["join"][0];
 
         if (roomId != null)
         {
-            peerId = manager.AddPeer(roomId, ws);
+            var success = manager.AddPeer(roomId, ws, out peerId);
+
+            if (!success)
+            {
+                await ws.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Provided room ID does not exist",
+                    CancellationToken.None);
+                return;
+            }
+
+
             await manager.SendMessageAsync(
                 roomId,
                 peerId,
@@ -74,14 +84,38 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                 {
                     case "host":
                     {
-                        var data = JsonSerializer.Deserialize<Host>(msg);
+                        if (roomId != null || peerId != null)
+                        {
+                            Debug.WriteLine($"{peerId} tried to host more than one room");
+                            break;
+                        }
 
-                        if (data != null) roomId = manager.CreateRoom(data.Title, ws);
+                        var data = JsonSerializer.Deserialize<Host>(msg);
+                        if (data != null)
+                        {
+                            var success = manager.CreateRoom(data.Title, ws, out roomId, out peerId);
+
+                            if (success)
+                            {
+                                await manager.SendMessageAsync(
+                                    roomId,
+                                    peerId,
+                                    JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
+                                );
+                            }
+                        }
 
                         break;
                     }
                     case "signal":
                     {
+                        if (roomId == null || peerId == null)
+                        {
+                            await ws.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Not hosting or joined server",
+                                CancellationToken.None);
+                            return;
+                        }
+
                         var data = JsonSerializer.Deserialize<RtcSignal>(msg);
 
                         if (data != null && manager.Contains(data.SocketId))
@@ -99,6 +133,13 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                     }
                     case "sendInit":
                     {
+                        if (roomId == null || peerId == null)
+                        {
+                            await ws.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Not hosting or joined server",
+                                CancellationToken.None);
+                            return;
+                        }
+
                         var data = JsonSerializer.Deserialize<SendInit>(msg);
                         if (data != null)
                         {
@@ -117,6 +158,14 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
         else if (result.MessageType == WebSocketMessageType.Close || ws.State == WebSocketState.Aborted)
         {
             Debug.WriteLine($"Removing socket {peerId}");
+
+            if (roomId == null || peerId == null)
+            {
+                await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "closed idk",
+                    CancellationToken.None);
+                return;
+            }
+
             await manager.RemoveSocketAsync(roomId, peerId, result.CloseStatus, result.CloseStatusDescription);
 
             var removeData = JsonSerializer.Serialize(new RemovePeer
