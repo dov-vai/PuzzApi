@@ -77,6 +77,12 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                     }
                     case "join":
                     {
+                        if (roomId != null || peerId != null)
+                        {
+                            Debug.WriteLine($"{peerId} tried to join more than one room");
+                            break;
+                        }
+
                         var data = JsonSerializer.Deserialize<Join>(msg);
 
                         if (data != null)
