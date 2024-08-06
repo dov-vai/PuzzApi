@@ -40,6 +40,7 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
 
     string? roomId = null;
     string? peerId = null;
+    var host = false;
 
     // TODO: switch to state machine pattern
     await manager.ReceiveMessageAsync(ws, async (result, buf) =>
@@ -66,11 +67,14 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                             var success = manager.CreateRoom(data.Title, data.Public, ws, out roomId, out peerId);
 
                             if (success)
+                            {
+                                host = true;
                                 await manager.SendMessageAsync(
                                     roomId,
                                     peerId,
                                     JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
                                 );
+                            }
                         }
 
                         break;
@@ -97,16 +101,12 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                                 return;
                             }
 
+                            roomId = data.RoomId;
+
                             await manager.SendMessageAsync(
                                 data.RoomId,
                                 peerId,
                                 JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
-                            );
-
-                            await manager.BroadcastAsync(
-                                data.RoomId,
-                                JsonSerializer.Serialize(new ReceiveInit { Type = "receiveInit", SocketId = peerId }),
-                                ws
                             );
                         }
 
@@ -123,6 +123,29 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                         var buffer = Encoding.UTF8.GetBytes(data);
                         var arraySegment = new ArraySegment<byte>(buffer, 0, buffer.Length);
                         await ws.SendAsync(arraySegment, WebSocketMessageType.Text, true, CancellationToken.None);
+                        break;
+                    }
+                    case "p2pInit":
+                    {
+                        if (peerId == null || roomId == null)
+                            break;
+
+                        var data = JsonSerializer.Serialize(new P2PInit
+                        {
+                            Type = "p2pInit",
+                            SocketId = peerId,
+                            RoomId = roomId,
+                            Host = host
+                        });
+
+                        await manager.SendMessageAsync(roomId, peerId, data);
+
+                        if (!host)
+                            await manager.BroadcastAsync(
+                                roomId,
+                                JsonSerializer.Serialize(new ReceiveInit { Type = "receiveInit", SocketId = peerId }),
+                                ws
+                            );
                         break;
                     }
                     case "signal":
