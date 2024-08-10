@@ -159,7 +159,7 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
 
                         var data = JsonSerializer.Deserialize<RtcSignal>(msg);
 
-                        if (data != null && manager.Contains(data.SocketId))
+                        if (data != null && manager.ContainsPeer(roomId, data.SocketId))
                         {
                             var signalData = JsonSerializer.Serialize(new RtcSignal
                             {

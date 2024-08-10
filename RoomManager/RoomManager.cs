@@ -141,6 +141,13 @@ public class RoomManager : IRoomManager
         return _rooms.ContainsKey(id);
     }
 
+    public bool ContainsPeer(string id, string peerId)
+    {
+        _rooms.TryGetValue(id, out var room);
+        var peer = room?.Peers.Find(p => p.Id == peerId);
+        return peer != null;
+    }
+
     public bool Contains(string id, WebSocket socket)
     {
         _rooms.TryGetValue(id, out var room);
