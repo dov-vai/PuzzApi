@@ -37,11 +37,11 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
     }
 
     using var ws = await context.WebSockets.AcceptWebSocketAsync();
-
+    
     string? roomId = null;
     string? peerId = null;
     var host = false;
-
+    
     // TODO: switch to state machine pattern
     await manager.ReceiveMessageAsync(ws, async (result, buf) =>
     {
@@ -53,46 +53,46 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
             if (type != null)
                 switch (type)
                 {
-                    case "host":
+                    case MessageTypes.Host:
                     {
                         if (roomId != null || peerId != null)
                         {
                             Debug.WriteLine($"{peerId} tried to host more than one room");
                             break;
                         }
-
+    
                         var data = JsonSerializer.Deserialize<Host>(msg);
                         if (data != null)
                         {
                             var success = manager.CreateRoom(data.Title, data.Public, ws, out roomId, out peerId);
-
+    
                             if (success)
                             {
                                 host = true;
                                 await manager.SendMessageAsync(
                                     roomId,
                                     peerId,
-                                    JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
+                                    JsonSerializer.Serialize(new Connected { SocketId = peerId })
                                 );
                             }
                         }
-
+    
                         break;
                     }
-                    case "join":
+                    case MessageTypes.Join:
                     {
                         if (roomId != null || peerId != null)
                         {
                             Debug.WriteLine($"{peerId} tried to join more than one room");
                             break;
                         }
-
+    
                         var data = JsonSerializer.Deserialize<Join>(msg);
-
+    
                         if (data != null)
                         {
                             var success = manager.AddPeer(data.RoomId, ws, out peerId);
-
+    
                             if (!success)
                             {
                                 await ws.CloseAsync(WebSocketCloseStatus.InvalidPayloadData,
@@ -100,55 +100,53 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                                     CancellationToken.None);
                                 return;
                             }
-
+    
                             roomId = data.RoomId;
-
+    
                             await manager.SendMessageAsync(
                                 data.RoomId,
                                 peerId,
-                                JsonSerializer.Serialize(new Connected { Type = "connected", SocketId = peerId })
+                                JsonSerializer.Serialize(new Connected { SocketId = peerId })
                             );
                         }
-
+    
                         break;
                     }
-                    case "publicRooms":
+                    case MessageTypes.PublicRooms:
                     {
                         var data = JsonSerializer.Serialize(new PublicRooms
                         {
-                            Type = "publicRooms",
                             Rooms = manager.GetPublicRooms()
                         });
-
+    
                         var buffer = Encoding.UTF8.GetBytes(data);
                         var arraySegment = new ArraySegment<byte>(buffer, 0, buffer.Length);
                         await ws.SendAsync(arraySegment, WebSocketMessageType.Text, true, CancellationToken.None);
                         break;
                     }
-                    case "p2pInit":
+                    case MessageTypes.P2PInit:
                     {
                         if (peerId == null || roomId == null)
                             break;
-
+    
                         var data = JsonSerializer.Serialize(new P2PInit
                         {
-                            Type = "p2pInit",
                             SocketId = peerId,
                             RoomId = roomId,
                             Host = host
                         });
-
+    
                         await manager.SendMessageAsync(roomId, peerId, data);
-
+    
                         if (!host)
                             await manager.BroadcastAsync(
                                 roomId,
-                                JsonSerializer.Serialize(new ReceiveInit { Type = "receiveInit", SocketId = peerId }),
+                                JsonSerializer.Serialize(new ReceiveInit { SocketId = peerId }),
                                 ws
                             );
                         break;
                     }
-                    case "signal":
+                    case MessageTypes.RtcSignal:
                     {
                         if (roomId == null || peerId == null)
                         {
@@ -156,23 +154,22 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                                 CancellationToken.None);
                             return;
                         }
-
+    
                         var data = JsonSerializer.Deserialize<RtcSignal>(msg);
-
+    
                         if (data != null && manager.ContainsPeer(roomId, data.SocketId))
                         {
                             var signalData = JsonSerializer.Serialize(new RtcSignal
                             {
-                                Type = "signal",
                                 Signal = data.Signal,
                                 SocketId = peerId
                             });
                             await manager.SendMessageAsync(roomId, data.SocketId, signalData);
                         }
-
+    
                         break;
                     }
-                    case "sendInit":
+                    case MessageTypes.SendInit:
                     {
                         if (roomId == null || peerId == null)
                         {
@@ -180,18 +177,17 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
                                 CancellationToken.None);
                             return;
                         }
-
+    
                         var data = JsonSerializer.Deserialize<SendInit>(msg);
                         if (data != null)
                         {
                             var initData = JsonSerializer.Serialize(new SendInit
                             {
-                                Type = "sendInit",
                                 SocketId = peerId
                             });
                             await manager.SendMessageAsync(roomId, data.SocketId, initData);
                         }
-
+    
                         break;
                     }
                 }
@@ -199,22 +195,21 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
         else if (result.MessageType == WebSocketMessageType.Close || ws.State == WebSocketState.Aborted)
         {
             Debug.WriteLine($"Removing socket {peerId}");
-
+    
             if (roomId == null || peerId == null)
             {
                 await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "closed idk",
                     CancellationToken.None);
                 return;
             }
-
+    
             await manager.RemoveSocketAsync(roomId, peerId, result.CloseStatus, result.CloseStatusDescription);
-
+    
             var removeData = JsonSerializer.Serialize(new RemovePeer
             {
-                Type = "removePeer",
                 SocketId = peerId
             });
-
+    
             await manager.BroadcastAsync(roomId, removeData);
         }
     });
