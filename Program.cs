@@ -190,6 +190,28 @@ app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
     
                         break;
                     }
+                    case MessageTypes.Disconnect:
+                    {
+                        if (roomId == null || peerId == null)
+                        {
+                            break;
+                        }
+
+                        await manager.DisconnectPeerAsync(roomId, peerId);
+                        
+                        var removeData = JsonSerializer.Serialize(new RemovePeer
+                        {
+                            SocketId = peerId
+                        });
+    
+                        await manager.BroadcastAsync(roomId, removeData);
+
+                        peerId = null;
+                        roomId = null;
+                        host = false;
+                        
+                        break;
+                    }
                 }
         }
         else if (result.MessageType == WebSocketMessageType.Close || ws.State == WebSocketState.Aborted)

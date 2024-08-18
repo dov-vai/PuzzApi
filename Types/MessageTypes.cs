@@ -11,4 +11,5 @@ public class MessageTypes
     public const string RemovePeer = "removePeer";
     public const string RtcSignal = "signal";
     public const string SendInit = "sendInit";
+    public const string Disconnect = "disconnect";
 }

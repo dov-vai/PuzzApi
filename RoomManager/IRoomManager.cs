@@ -9,6 +9,7 @@ public interface IRoomManager
     bool AddPeer(string id, WebSocket socket, out string? peerId);
     Task RemoveSocketAsync(string id, string peerId);
     Task RemoveSocketAsync(string id, string peerId, WebSocketCloseStatus? closeStatus, string? closeStatusDescription);
+    Task DisconnectPeerAsync(string id, string peerId);
     Task SendMessageAsync(string id, string peerId, string message);
     Task BroadcastAsync(string id, string message, WebSocket? excludeSocket = null);
     Task ReceiveMessageAsync(WebSocket socket, Action<WebSocketReceiveResult, byte[]> handleMessage);
