@@ -18,4 +18,5 @@ public interface IRoomManager
     bool Contains(string id);
     bool ContainsPeer(string id, string peerId);
     bool Contains(string id, WebSocket socket);
+    string? GetHostId(string id);
 }

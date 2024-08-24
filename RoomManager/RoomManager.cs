@@ -56,7 +56,7 @@ public class RoomManager : IRoomManager
 
         return success;
     }
-    
+
     public async Task RemoveSocketAsync(string id, string peerId)
     {
         await RemoveSocketAsync(id, peerId, WebSocketCloseStatus.NormalClosure, "Closed");
@@ -74,7 +74,7 @@ public class RoomManager : IRoomManager
             if (room?.Peers.Count == 0) _rooms.TryRemove(id, out _);
         }
     }
-    
+
     public async Task DisconnectPeerAsync(string id, string peerId)
     {
         _rooms.TryGetValue(id, out var room);
@@ -167,5 +167,11 @@ public class RoomManager : IRoomManager
             return false;
 
         return room.Peers.Select(p => p.Socket).Contains(socket);
+    }
+
+    public string? GetHostId(string id)
+    {
+        _rooms.TryGetValue(id, out var room);
+        return room?.Host.Id;
     }
 }
