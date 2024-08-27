@@ -101,7 +101,7 @@ public class ConnectionHandler
         var data = JsonSerializer.Deserialize<Host>(msg);
         if (data != null)
         {
-            var success = _manager.CreateRoom(data.Title, data.Public, _webSocket, out _roomId,
+            var success = _manager.CreateRoom(data.Title, data.Pieces, data.Public, _webSocket, out _roomId,
                 out _peerId);
 
             if (success)

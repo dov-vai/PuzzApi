@@ -9,13 +9,15 @@ public class RoomManager : IRoomManager
 {
     private readonly ConcurrentDictionary<string, Room.Room> _rooms = new();
 
-    public bool CreateRoom(string title, bool publicRoom, WebSocket socket, out string? roomId, out string? peerId)
+    public bool CreateRoom(string title, int pieces, bool publicRoom, WebSocket socket, out string? roomId,
+        out string? peerId)
     {
         var host = new Peer { Id = Guid.NewGuid().ToString(), Socket = socket };
         var room = new Room.Room
         {
             Id = Guid.NewGuid().ToString(),
             Title = title,
+            Pieces = pieces,
             Public = publicRoom,
             Host = host,
             Peers = new List<Peer>()
@@ -138,6 +140,7 @@ public class RoomManager : IRoomManager
             {
                 Id = r.Id,
                 Title = r.Title,
+                Pieces = r.Pieces,
                 PlayerCount = r.Peers.Count
             });
     }
