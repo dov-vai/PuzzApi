@@ -64,15 +64,16 @@ public class RoomManager : IRoomManager
         await RemoveSocketAsync(id, peerId, WebSocketCloseStatus.NormalClosure, "Closed");
     }
 
-    public async Task RemoveSocketAsync(string id, string peerId, WebSocketCloseStatus? closeStatus,
-        string? closeStatusDescription)
+    public async Task RemoveSocketAsync(string id, string peerId, WebSocketCloseStatus closeStatus,
+        string closeStatusDescription)
     {
         _rooms.TryGetValue(id, out var room);
         var peer = room?.Peers.Find(p => p.Id == peerId);
         if (peer != null)
         {
             room?.Peers.Remove(peer);
-            await peer.Socket.CloseAsync(closeStatus.Value, closeStatusDescription, CancellationToken.None);
+            if (peer.Socket.State != WebSocketState.Aborted)
+                await peer.Socket.CloseAsync(closeStatus, closeStatusDescription, CancellationToken.None);
             if (room?.Peers.Count == 0) _rooms.TryRemove(id, out _);
         }
     }

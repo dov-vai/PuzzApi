@@ -249,12 +249,16 @@ public class ConnectionHandler
     {
         if (_roomId == null || _peerId == null)
         {
-            await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "closed idk", CancellationToken.None);
+            if (_webSocket.State != WebSocketState.Aborted)
+                await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "closed idk", CancellationToken.None);
             return;
         }
 
         Debug.WriteLine($"Removing socket {_peerId}");
-        await _manager.RemoveSocketAsync(_roomId, _peerId, result.CloseStatus, result.CloseStatusDescription);
+        var status = result?.CloseStatus ?? WebSocketCloseStatus.NormalClosure;
+        var description = result?.CloseStatusDescription ?? "";
+        await _manager.RemoveSocketAsync(_roomId, _peerId, status, description);
+
         var removeData = JsonSerializer.Serialize(new RemovePeer
         {
             SocketId = _peerId
