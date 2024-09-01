@@ -1,6 +1,6 @@
-using PuzzAPI.Room;
+using PuzzAPI.ConnectionHandler.Room;
 
-namespace PuzzAPI.Types;
+namespace PuzzAPI.ConnectionHandler.Types;
 
 public class PublicRooms
 {

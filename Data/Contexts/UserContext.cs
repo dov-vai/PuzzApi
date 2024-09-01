@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PuzzAPI.Models;
+using PuzzAPI.Data.Models;
 
-namespace PuzzAPI.Data.Context;
+namespace PuzzAPI.Data.Contexts;
 
 public class UserContext : DbContext
 {

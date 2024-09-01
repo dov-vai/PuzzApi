@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
-using PuzzAPI.Models;
+using PuzzAPI.Data.Models;
 
 namespace PuzzAPI.Utils;
 

@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
-using PuzzAPI.Room;
+using PuzzAPI.ConnectionHandler.Room;
 
-namespace PuzzAPI.RoomManager;
+namespace PuzzAPI.ConnectionHandler.RoomManager;
 
 public class RoomManager : IRoomManager
 {

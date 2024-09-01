@@ -1,7 +1,7 @@
 using System.Net.WebSockets;
-using PuzzAPI.Room;
+using PuzzAPI.ConnectionHandler.Room;
 
-namespace PuzzAPI.RoomManager;
+namespace PuzzAPI.ConnectionHandler.RoomManager;
 
 public interface IRoomManager
 {

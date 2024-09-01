@@ -1,4 +1,4 @@
-namespace PuzzAPI.Types;
+namespace PuzzAPI.ConnectionHandler.Types;
 
 public class SendInit
 {

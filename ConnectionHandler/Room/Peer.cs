@@ -1,6 +1,6 @@
 using System.Net.WebSockets;
 
-namespace PuzzAPI.Room;
+namespace PuzzAPI.ConnectionHandler.Room;
 
 public class Peer
 {

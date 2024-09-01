@@ -1,4 +1,4 @@
-namespace PuzzAPI.Room;
+namespace PuzzAPI.ConnectionHandler.Room;
 
 public class PublicRoom
 {

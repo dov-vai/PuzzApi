@@ -1,6 +1,6 @@
-using PuzzAPI.Models;
+using PuzzAPI.Data.Models;
 
-namespace PuzzAPI.Data.Repository;
+namespace PuzzAPI.Data.Repositories;
 
 public interface IUserRepository
 {

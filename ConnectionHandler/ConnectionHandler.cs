@@ -3,9 +3,9 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using PuzzAPI.RoomManager;
-using PuzzAPI.Types;
-using Host = PuzzAPI.Types.Host;
+using PuzzAPI.ConnectionHandler.RoomManager;
+using PuzzAPI.ConnectionHandler.Types;
+using Host = PuzzAPI.ConnectionHandler.Types.Host;
 
 namespace PuzzAPI.ConnectionHandler;
 

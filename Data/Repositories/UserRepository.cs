@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using PuzzAPI.Data.Context;
-using PuzzAPI.Models;
+using PuzzAPI.Data.Contexts;
+using PuzzAPI.Data.Models;
 
-namespace PuzzAPI.Data.Repository;
+namespace PuzzAPI.Data.Repositories;
 
 public class UserRepository : IUserRepository
 {

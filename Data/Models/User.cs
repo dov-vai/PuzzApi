@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PuzzAPI.Models;
+namespace PuzzAPI.Data.Models;
 
 public class User
 {

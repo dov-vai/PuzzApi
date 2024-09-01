@@ -1,10 +1,10 @@
 using System.Data;
 using System.Security.Authentication;
-using PuzzAPI.Data.Repository;
-using PuzzAPI.Models;
+using PuzzAPI.Data.Models;
+using PuzzAPI.Data.Repositories;
 using PuzzAPI.Utils;
 
-namespace PuzzAPI.Services;
+namespace PuzzAPI.Data.Services;
 
 public class AuthService
 {
