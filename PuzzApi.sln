@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuzzAPI", "PuzzAPI\PuzzAPI.csproj", "{67EBD974-537A-4054-96A9-8B372E9A6A76}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuzzAPI.Tests", "PuzzAPI.Tests\PuzzAPI.Tests.csproj", "{A4603CAF-61B9-45AE-ADA2-0123B8874660}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{67EBD974-537A-4054-96A9-8B372E9A6A76}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67EBD974-537A-4054-96A9-8B372E9A6A76}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{67EBD974-537A-4054-96A9-8B372E9A6A76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4603CAF-61B9-45AE-ADA2-0123B8874660}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4603CAF-61B9-45AE-ADA2-0123B8874660}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4603CAF-61B9-45AE-ADA2-0123B8874660}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4603CAF-61B9-45AE-ADA2-0123B8874660}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
