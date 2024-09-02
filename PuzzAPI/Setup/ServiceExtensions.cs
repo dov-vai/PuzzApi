@@ -22,7 +22,7 @@ public static class ServiceExtensions
         services.AddDbContext<UserContext>(options =>
             options.UseSqlite(configuration.GetConnectionString("UserContext")));
         services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<JwtUtils>();
+        services.AddScoped<ITokenGenerator, JwtUtils>();
         services.AddScoped<AuthService>();
         services.AddAuthorization();
         return services;

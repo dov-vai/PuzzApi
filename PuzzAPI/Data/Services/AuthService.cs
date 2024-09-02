@@ -8,13 +8,13 @@ namespace PuzzAPI.Data.Services;
 
 public class AuthService
 {
-    private readonly JwtUtils _jwtUtils;
+    private readonly ITokenGenerator _tokenGenerator;
     private readonly IUserRepository _userRepository;
 
-    public AuthService(IUserRepository userRepository, JwtUtils jwtUtils)
+    public AuthService(IUserRepository userRepository, ITokenGenerator tokenGenerator)
     {
         _userRepository = userRepository;
-        _jwtUtils = jwtUtils;
+        _tokenGenerator = tokenGenerator;
     }
 
     public async Task<string> Authenticate(User user)
@@ -24,7 +24,7 @@ public class AuthService
         if (storedUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, storedUser.Password))
             throw new InvalidCredentialException();
 
-        var token = _jwtUtils.GenerateToken(user);
+        var token = _tokenGenerator.GenerateToken(user);
         return token;
     }
 

@@ -5,7 +5,7 @@ using PuzzAPI.Data.Models;
 
 namespace PuzzAPI.Utils;
 
-public class JwtUtils
+public class JwtUtils : ITokenGenerator
 {
     private readonly RsaKeyProvider _keyProvider;
 
