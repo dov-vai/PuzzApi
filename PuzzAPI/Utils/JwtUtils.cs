@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
@@ -5,7 +6,7 @@ using PuzzAPI.Data.Models;
 
 namespace PuzzAPI.Utils;
 
-public class JwtUtils : ITokenGenerator
+public class JwtUtils : ITokenUtils
 {
     private readonly RsaKeyProvider _keyProvider;
 
@@ -31,6 +32,37 @@ public class JwtUtils : ITokenGenerator
         var token = handler.CreateToken(tokenDescriptor);
 
         return handler.WriteToken(token);
+    }
+
+    public bool ValidateToken(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var validationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = _keyProvider.RsaSecurityKey,
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ClockSkew = TimeSpan.Zero
+        };
+
+        try
+        {
+            tokenHandler.ValidateToken(token, validationParameters, out _);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public string GetUsernameFromToken(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(token);
+        Debug.WriteLine(jwtToken.Claims.ToString());
+        return jwtToken.Claims.First(c => c.Type == "unique_name").Value;
     }
 
     private static ClaimsIdentity GenerateClaims(User user)

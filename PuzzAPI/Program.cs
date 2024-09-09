@@ -13,7 +13,8 @@ app.ConfigureDatabase();
 app.ConfigureMiddleWare();
 
 app.MapWebSocketEndpoint()
-    .MapAuthEndpoints();
+    .MapAuthEndpoints()
+    .MapInfoEndpoints();
 
 app.MapFallbackToFile("index.html");
 

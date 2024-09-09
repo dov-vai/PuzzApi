@@ -12,13 +12,13 @@ namespace PuzzAPI.Tests;
 public class AuthServiceTests
 {
     private readonly Mock<IUserRepository> _userRepositoryMock;
-    private readonly Mock<ITokenGenerator> _tokenGeneratorMock;
+    private readonly Mock<ITokenUtils> _tokenGeneratorMock;
     private readonly AuthService _authService;
 
     public AuthServiceTests()
     {
         _userRepositoryMock = new Mock<IUserRepository>();
-        _tokenGeneratorMock = new Mock<ITokenGenerator>();
+        _tokenGeneratorMock = new Mock<ITokenUtils>();
         _authService = new AuthService(_userRepositoryMock.Object, _tokenGeneratorMock.Object);
     }
 
@@ -35,7 +35,7 @@ public class AuthServiceTests
                      .Returns("validToken");
 
         // Act
-        var result = await _authService.Authenticate(user);
+        var result = await _authService.Login(user);
 
         // Assert
         Assert.Equal("validToken", result);
@@ -51,7 +51,7 @@ public class AuthServiceTests
                            .ReturnsAsync((User?)null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidCredentialException>(() => _authService.Authenticate(user));
+        await Assert.ThrowsAsync<InvalidCredentialException>(() => _authService.Login(user));
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class AuthServiceTests
                            .ReturnsAsync(storedUser);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidCredentialException>(() => _authService.Authenticate(user));
+        await Assert.ThrowsAsync<InvalidCredentialException>(() => _authService.Login(user));
     }
 
     [Fact]

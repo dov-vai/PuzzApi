@@ -35,7 +35,7 @@ public static class MapEndpoints
         {
             try
             {
-                var token = await auth.Authenticate(user);
+                var token = await auth.Login(user);
 
                 response.Cookies.Append("token", token, new CookieOptions
                 {
@@ -65,6 +65,22 @@ public static class MapEndpoints
             {
                 return Results.Conflict();
             }
+        });
+
+        return app;
+    }
+
+    public static WebApplication MapInfoEndpoints(this WebApplication app)
+    {
+        app.MapGet("/user-info", async (HttpContext context, AuthService auth) =>
+        {
+            var jwtToken = context.Request.Cookies["token"];
+            var user = await auth.Authenticate(jwtToken);
+
+            if (user == null)
+                return Results.Unauthorized();
+
+            return Results.Json(new {Username = user.Username});
         });
 
         return app;
