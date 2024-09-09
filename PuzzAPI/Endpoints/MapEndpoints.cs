@@ -46,7 +46,7 @@ public static class MapEndpoints
                     Expires = DateTime.UtcNow.AddMinutes(15)
                 });
 
-                return Results.Ok();
+                return Results.Json(new UserInfo { Username = user.Username });
             }
             catch (InvalidCredentialException ex)
             {
@@ -76,11 +76,10 @@ public static class MapEndpoints
         {
             var jwtToken = context.Request.Cookies["token"];
             var user = await auth.Authenticate(jwtToken);
-
             if (user == null)
                 return Results.Unauthorized();
 
-            return Results.Json(new {Username = user.Username});
+            return Results.Json(new UserInfo {Username = user.Username});
         });
 
         return app;
