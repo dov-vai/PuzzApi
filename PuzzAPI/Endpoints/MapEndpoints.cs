@@ -1,6 +1,7 @@
 using System.Data;
 using System.Net;
 using System.Security.Authentication;
+using Microsoft.IdentityModel.Tokens;
 using PuzzAPI.ConnectionHandler.RoomManager;
 using PuzzAPI.Data.Models;
 using PuzzAPI.Data.Services;
@@ -35,20 +36,11 @@ public static class MapEndpoints
         {
             try
             {
-                var token = await auth.Login(user);
-
-                response.Cookies.Append("token", token, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = !app.Environment.IsDevelopment(),
-                    SameSite = SameSiteMode.Lax,
-                    Path = "/",
-                    Expires = DateTime.UtcNow.AddMinutes(15)
-                });
-
+                var tokens = await auth.Login(user);
+                HttpUtils.SetTokenCookies(response, tokens, !app.Environment.IsDevelopment());
                 return Results.Json(new UserInfo { Username = user.Username });
             }
-            catch (InvalidCredentialException ex)
+            catch (InvalidCredentialException)
             {
                 return Results.Unauthorized();
             }
@@ -67,6 +59,27 @@ public static class MapEndpoints
             }
         });
 
+        app.MapGet("/refresh-token", async (HttpContext context, AuthService auth) =>
+        {
+            var refreshToken = context.Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(refreshToken))
+                return Results.Unauthorized();
+
+            try
+            {
+                var tokens = await auth.RefreshToken(refreshToken);
+                if (tokens == null)
+                    return Results.Unauthorized();
+                HttpUtils.SetTokenCookies(context.Response, tokens, !app.Environment.IsDevelopment());
+                return Results.Ok();
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                return Results.Unauthorized();
+            }
+        });
+
         return app;
     }
 
@@ -75,11 +88,21 @@ public static class MapEndpoints
         app.MapGet("/user-info", async (HttpContext context, AuthService auth) =>
         {
             var jwtToken = context.Request.Cookies["token"];
-            var user = await auth.Authenticate(jwtToken);
-            if (user == null)
+
+            if (string.IsNullOrEmpty(jwtToken))
                 return Results.Unauthorized();
 
-            return Results.Json(new UserInfo {Username = user.Username});
+            try
+            {
+                var user = await auth.Authenticate(jwtToken);
+                if (user == null)
+                    return Results.Unauthorized();
+                return Results.Json(new UserInfo { Username = user.Username });
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                return Results.Unauthorized();
+            }
         });
 
         return app;

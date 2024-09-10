@@ -15,7 +15,7 @@ public class JwtUtils : ITokenUtils
         _keyProvider = keyProvider;
     }
 
-    public string GenerateToken(User user)
+    public string GenerateToken(User user, DateTime? expires)
     {
         var handler = new JwtSecurityTokenHandler();
         var credentials = new SigningCredentials(
@@ -25,7 +25,7 @@ public class JwtUtils : ITokenUtils
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = GenerateClaims(user),
-            Expires = DateTime.UtcNow.AddMinutes(15),
+            Expires = expires,
             SigningCredentials = credentials
         };
 
@@ -50,6 +50,10 @@ public class JwtUtils : ITokenUtils
         {
             tokenHandler.ValidateToken(token, validationParameters, out _);
             return true;
+        }
+        catch (SecurityTokenExpiredException)
+        {
+            throw;
         }
         catch
         {

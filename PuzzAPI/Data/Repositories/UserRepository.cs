@@ -29,4 +29,10 @@ public class UserRepository : IUserRepository
 
         return true;
     }
+
+    public async Task Update(User user)
+    {
+        _users.Update(user);
+        await _context.SaveChangesAsync();
+    }
 }

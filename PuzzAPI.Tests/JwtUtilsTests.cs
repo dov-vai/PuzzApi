@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Runtime.InteropServices.JavaScript;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
@@ -17,9 +18,10 @@ public class JwtUtilsTests
         var user = new User { Username = "verypublicuser", Password = "topsecretpassword" };
         var rsaKeyProvider = new RsaKeyProvider(new RsaSecurityKey(RSA.Create(2048)));
         var jwtUtils = new JwtUtils(rsaKeyProvider);
+        var expires = DateTime.UtcNow.AddMinutes(15);
 
         // Act
-        var token = jwtUtils.GenerateToken(user);
+        var token = jwtUtils.GenerateToken(user, expires);
 
         // Assert
         Assert.NotNull(token);
@@ -29,6 +31,6 @@ public class JwtUtilsTests
 
         // Validate expiration
         Assert.True(jwtToken.ValidTo > DateTime.UtcNow);
-        Assert.True(jwtToken.ValidTo <= DateTime.UtcNow.AddMinutes(15));
+        Assert.True(jwtToken.ValidTo <= expires);
     }
 }

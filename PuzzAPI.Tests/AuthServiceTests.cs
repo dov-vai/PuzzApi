@@ -1,4 +1,5 @@
 using System.Data;
+using System.Runtime.InteropServices.JavaScript;
 using System.Security.Authentication;
 using BCrypt.Net;
 using Moq;
@@ -23,7 +24,7 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task Authenticate_ShouldReturnToken_WhenCredentialsAreValid()
+    public async Task Authenticate_ShouldReturnTokens_WhenCredentialsAreValid()
     {
         // Arrange
         var user = new User { Username = "validUser", Password = "validPassword" };
@@ -31,14 +32,15 @@ public class AuthServiceTests
 
         _userRepositoryMock.Setup(repo => repo.GetByUsername(user.Username))
                            .ReturnsAsync(storedUser);
-        _tokenGeneratorMock.Setup(jwt => jwt.GenerateToken(user))
+        _tokenGeneratorMock.Setup(jwt => jwt.GenerateToken(user, It.IsAny<DateTime>()))
                      .Returns("validToken");
 
         // Act
         var result = await _authService.Login(user);
 
         // Assert
-        Assert.Equal("validToken", result);
+        Assert.Equal("validToken", result.AuthToken);
+        Assert.Equal("validToken", result.RefreshToken);
     }
 
     [Fact]
