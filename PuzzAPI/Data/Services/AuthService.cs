@@ -67,4 +67,18 @@ public class AuthService
 
         return null;
     }
+
+    public async Task InvalidateRefreshToken(string refreshToken)
+    {
+        if (!_tokenUtils.ValidateToken(refreshToken))
+            return;
+
+        var username = _tokenUtils.GetUsernameFromToken(refreshToken);
+        var user = await _userRepository.GetByUsername(username);
+        if (user?.RefreshToken == refreshToken)
+        {
+            user.RefreshToken = null;
+            await _userRepository.Update(user);
+        }
+    }
 }

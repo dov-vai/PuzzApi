@@ -80,6 +80,26 @@ public static class MapEndpoints
             }
         });
 
+        app.MapGet("/logout", async context => { context.Response.Cookies.Delete("token"); });
+
+        app.MapGet("/logout-sessions", async (HttpContext context, AuthService auth) =>
+        {
+            var refreshToken = context.Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(refreshToken))
+                return Results.Unauthorized();
+
+            try
+            {
+                await auth.InvalidateRefreshToken(refreshToken);
+                return Results.Ok();
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                return Results.Unauthorized();
+            }
+        });
+
         return app;
     }
 
