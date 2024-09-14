@@ -19,4 +19,10 @@ public class HttpUtils
         cookieOptions.Expires = DateTime.UtcNow.AddDays(15);
         response.Cookies.Append("refreshToken", tokens.RefreshToken, cookieOptions);
     }
+
+    public static void DeleteTokenCookies(HttpResponse response)
+    {
+        response.Cookies.Delete("token");
+        response.Cookies.Delete("refreshToken");
+    }
 }

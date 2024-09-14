@@ -80,7 +80,11 @@ public static class MapEndpoints
             }
         });
 
-        app.MapGet("/logout", async context => { context.Response.Cookies.Delete("token"); });
+        app.MapGet("/logout", async (HttpResponse response) =>
+        {
+            HttpUtils.DeleteTokenCookies(response);
+            return Results.Ok();
+        });
 
         app.MapGet("/logout-sessions", async (HttpContext context, AuthService auth) =>
         {
@@ -92,6 +96,7 @@ public static class MapEndpoints
             try
             {
                 await auth.InvalidateRefreshToken(refreshToken);
+                HttpUtils.DeleteTokenCookies(context.Response);
                 return Results.Ok();
             }
             catch (SecurityTokenExpiredException)
