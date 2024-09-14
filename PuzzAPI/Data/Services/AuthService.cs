@@ -26,8 +26,8 @@ public class AuthService
 
         var token = _tokenUtils.GenerateToken(user, DateTime.UtcNow.AddMinutes(15));
         var refreshToken = _tokenUtils.GenerateToken(user, DateTime.UtcNow.AddDays(15));
-        user.RefreshToken = refreshToken;
-        await _userRepository.Update(user);
+        storedUser.RefreshToken = refreshToken;
+        await _userRepository.Update(storedUser);
 
         return new UserTokens { AuthToken = token, RefreshToken = refreshToken };
     }
