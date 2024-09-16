@@ -14,7 +14,7 @@ public interface IRoomManager
     Task DisconnectPeerAsync(string id, string peerId);
     Task SendMessageAsync(string id, string peerId, string message);
     Task BroadcastAsync(string id, string message, WebSocket? excludeSocket = null);
-    Task ReceiveMessageAsync(WebSocket socket, Action<WebSocketReceiveResult, byte[]> handleMessage);
+    Task ReceiveMessageAsync(WebSocket socket, Func<WebSocketReceiveResult, byte[], Task> handleMessage);
     IEnumerable<PublicRoom> GetPublicRooms();
     int GetCount();
     bool Contains(string id);

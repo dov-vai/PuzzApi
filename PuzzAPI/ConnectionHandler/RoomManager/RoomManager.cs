@@ -123,13 +123,16 @@ public class RoomManager : IRoomManager
         }
     }
 
-    public async Task ReceiveMessageAsync(WebSocket socket, Action<WebSocketReceiveResult, byte[]> handleMessage)
+    public async Task ReceiveMessageAsync(WebSocket socket, Func<WebSocketReceiveResult, byte[], Task> handleMessage)
     {
         var buffer = new byte[1024 * 1000];
         while (socket.State == WebSocketState.Open)
         {
             var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-            handleMessage(result, buffer);
+            // await for error handling, this _might_ cause performance issues later
+            // as this would process the messages sequentially
+            // but this would also help avoid concurrency issues (tradeoff)
+            await handleMessage(result, buffer);
         }
     }
 

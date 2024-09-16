@@ -3,6 +3,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Connections;
 using PuzzAPI.ConnectionHandler.RoomManager;
 using PuzzAPI.ConnectionHandler.Types;
 using Host = PuzzAPI.ConnectionHandler.Types.Host;
@@ -30,63 +31,67 @@ public class ConnectionHandler
     {
         try
         {
-            await _manager.ReceiveMessageAsync(_webSocket, async (result, buf) =>
-            {
-                if (result.MessageType == WebSocketMessageType.Text)
-                {
-                    var message = Encoding.UTF8.GetString(buf, 0, result.Count);
-                    var node = JsonNode.Parse(message);
-                    var type = (string?)node?["Type"];
-                    if (type == null) return;
-                    switch (type)
-                    {
-                        case MessageTypes.Host:
-                        {
-                            await HandleHost(message);
-                            break;
-                        }
-                        case MessageTypes.Join:
-                        {
-                            await HandleJoin(message);
-                            break;
-                        }
-                        case MessageTypes.PublicRooms:
-                        {
-                            await HandlePublicRooms();
-                            break;
-                        }
-                        case MessageTypes.P2PInit:
-                        {
-                            await HandleP2PInit();
-                            break;
-                        }
-                        case MessageTypes.RtcSignal:
-                        {
-                            await HandleSignal(message);
-                            break;
-                        }
-                        case MessageTypes.SendInit:
-                        {
-                            await HandleSendInit(message);
-                            break;
-                        }
-                        case MessageTypes.Disconnect:
-                        {
-                            await HandleDisconnect();
-                            break;
-                        }
-                    }
-                }
-                else if (result.MessageType == WebSocketMessageType.Close || _webSocket.State == WebSocketState.Aborted)
-                {
-                    await CloseConnection(result);
-                }
-            });
+            await _manager.ReceiveMessageAsync(_webSocket, HandleMessage);
         }
-        catch (WebSocketException ex)
+        catch (Exception ex) when (
+            ex is WebSocketException
+            || ex is ConnectionAbortedException)
         {
             Debug.WriteLine($"Error caught, closing connection: {ex}");
             await CloseConnection();
+        }
+    }
+
+    private async Task HandleMessage(WebSocketReceiveResult result, byte[] buf)
+    {
+        if (result.MessageType == WebSocketMessageType.Text)
+        {
+            var message = Encoding.UTF8.GetString(buf, 0, result.Count);
+            var node = JsonNode.Parse(message);
+            var type = (string?)node?["Type"];
+            if (type == null) return;
+            switch (type)
+            {
+                case MessageTypes.Host:
+                {
+                    await HandleHost(message);
+                    break;
+                }
+                case MessageTypes.Join:
+                {
+                    await HandleJoin(message);
+                    break;
+                }
+                case MessageTypes.PublicRooms:
+                {
+                    await HandlePublicRooms();
+                    break;
+                }
+                case MessageTypes.P2PInit:
+                {
+                    await HandleP2PInit();
+                    break;
+                }
+                case MessageTypes.RtcSignal:
+                {
+                    await HandleSignal(message);
+                    break;
+                }
+                case MessageTypes.SendInit:
+                {
+                    await HandleSendInit(message);
+                    break;
+                }
+                case MessageTypes.Disconnect:
+                {
+                    await HandleDisconnect();
+                    break;
+                }
+            }
+        }
+        else if (result.MessageType == WebSocketMessageType.Close || _webSocket.State == WebSocketState.Aborted)
+        {
+            await CloseConnection(result);
         }
     }
 
