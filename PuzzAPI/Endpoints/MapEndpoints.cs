@@ -3,8 +3,10 @@ using System.Net;
 using System.Security.Authentication;
 using Microsoft.IdentityModel.Tokens;
 using PuzzAPI.ConnectionHandler.RoomManager;
+using PuzzAPI.ConnectionHandler.Types;
 using PuzzAPI.Data.Models;
 using PuzzAPI.Data.Services;
+using Host = PuzzAPI.ConnectionHandler.Types.Host;
 
 namespace PuzzAPI.Endpoints;
 
@@ -128,6 +130,16 @@ public static class MapEndpoints
             {
                 return Results.Unauthorized();
             }
+        });
+
+        return app;
+    }
+
+    public static WebApplication MapGameEndpoints(this WebApplication app)
+    {
+        app.MapGet("/public-rooms", async (HttpContext context, IRoomManager manager) =>
+        {
+            return Results.Json(manager.GetPublicRooms());
         });
 
         return app;

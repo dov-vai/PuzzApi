@@ -14,7 +14,8 @@ app.ConfigureMiddleWare();
 
 app.MapWebSocketEndpoint()
     .MapAuthEndpoints()
-    .MapInfoEndpoints();
+    .MapInfoEndpoints()
+    .MapGameEndpoints();
 
 app.MapFallbackToFile("index.html");
 

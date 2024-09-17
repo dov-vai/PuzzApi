@@ -62,11 +62,6 @@ public class ConnectionHandler
                     await HandleJoin(message);
                     break;
                 }
-                case MessageTypes.PublicRooms:
-                {
-                    await HandlePublicRooms();
-                    break;
-                }
                 case MessageTypes.P2PInit:
                 {
                     await HandleP2PInit();
@@ -151,19 +146,6 @@ public class ConnectionHandler
                 JsonSerializer.Serialize(new Connected { SocketId = _peerId, RoomId = _roomId })
             );
         }
-    }
-
-    private async Task HandlePublicRooms()
-    {
-        var data = JsonSerializer.Serialize(new PublicRooms
-        {
-            Rooms = _manager.GetPublicRooms()
-        });
-
-        var buffer = Encoding.UTF8.GetBytes(data);
-        var arraySegment = new ArraySegment<byte>(buffer, 0, buffer.Length);
-        await _webSocket.SendAsync(arraySegment, WebSocketMessageType.Text, true,
-            CancellationToken.None);
     }
 
     private async Task HandleP2PInit()
