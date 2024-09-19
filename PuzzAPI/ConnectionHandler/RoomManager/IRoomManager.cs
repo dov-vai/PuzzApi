@@ -5,9 +5,7 @@ namespace PuzzAPI.ConnectionHandler.RoomManager;
 
 public interface IRoomManager
 {
-    bool CreateRoom(string title, int pieces, bool publicRoom, WebSocket socket, out string? roomId,
-        out string? peerId);
-
+    bool CreateRoom(string title, int pieces, bool publicRoom, out string? roomId);
     bool AddPeer(string id, WebSocket socket, out string? peerId);
     Task RemoveSocketAsync(string id, string peerId);
     Task RemoveSocketAsync(string id, string peerId, WebSocketCloseStatus closeStatus, string closeStatusDescription);

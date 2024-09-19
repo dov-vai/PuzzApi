@@ -3,7 +3,6 @@ namespace PuzzAPI.ConnectionHandler.Types;
 public class MessageTypes
 {
     public const string Connected = "connected";
-    public const string Host = "host";
     public const string Join = "join";
     public const string P2PInit = "p2pInit";
     public const string ReceiveInit = "receiveInit";

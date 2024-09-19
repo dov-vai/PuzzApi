@@ -9,31 +9,22 @@ public class RoomManager : IRoomManager
 {
     private readonly ConcurrentDictionary<string, Room.Room> _rooms = new();
 
-    public bool CreateRoom(string title, int pieces, bool publicRoom, WebSocket socket, out string? roomId,
-        out string? peerId)
+    public bool CreateRoom(string title, int pieces, bool publicRoom, out string? roomId)
     {
-        var host = new Peer { Id = Guid.NewGuid().ToString(), Socket = socket };
         var room = new Room.Room
         {
             Id = Guid.NewGuid().ToString(),
             Title = title,
             Pieces = pieces,
             Public = publicRoom,
-            Host = host,
             Peers = new List<Peer>()
         };
-        room.Peers.Add(host);
 
         var success = _rooms.TryAdd(room.Id, room);
 
         roomId = null;
-        peerId = null;
 
-        if (success)
-        {
-            roomId = room.Id;
-            peerId = room.Host.Id;
-        }
+        if (success) roomId = room.Id;
 
         return success;
     }
@@ -52,6 +43,8 @@ public class RoomManager : IRoomManager
 
         if (room != null)
         {
+            if (room.Host == null) room.Host = peer;
+
             room.Peers.Add(peer);
             peerId = peer.Id;
         }

@@ -6,7 +6,6 @@ using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Connections;
 using PuzzAPI.ConnectionHandler.RoomManager;
 using PuzzAPI.ConnectionHandler.Types;
-using Host = PuzzAPI.ConnectionHandler.Types.Host;
 
 namespace PuzzAPI.ConnectionHandler;
 
@@ -52,11 +51,6 @@ public class ConnectionHandler
             if (type == null) return;
             switch (type)
             {
-                case MessageTypes.Host:
-                {
-                    await HandleHost(message);
-                    break;
-                }
                 case MessageTypes.Join:
                 {
                     await HandleJoin(message);
@@ -87,32 +81,6 @@ public class ConnectionHandler
         else if (result.MessageType == WebSocketMessageType.Close || _webSocket.State == WebSocketState.Aborted)
         {
             await CloseConnection(result);
-        }
-    }
-
-    private async Task HandleHost(string msg)
-    {
-        if (_roomId != null || _peerId != null)
-        {
-            Debug.WriteLine($"{_peerId} tried to host more than one room");
-            return;
-        }
-
-        var data = JsonSerializer.Deserialize<Host>(msg);
-        if (data != null)
-        {
-            var success = _manager.CreateRoom(data.Title, data.Pieces, data.Public, _webSocket, out _roomId,
-                out _peerId);
-
-            if (success)
-            {
-                _host = true;
-                await _manager.SendMessageAsync(
-                    _roomId,
-                    _peerId,
-                    JsonSerializer.Serialize(new Connected { SocketId = _peerId, RoomId = _roomId })
-                );
-            }
         }
     }
 

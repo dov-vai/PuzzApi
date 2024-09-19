@@ -6,6 +6,6 @@ public class Room
     public string Title { get; set; }
     public int Pieces { get; set; }
     public bool Public { get; set; }
-    public Peer Host { get; set; }
+    public Peer? Host { get; set; }
     public List<Peer> Peers { get; set; }
 }
