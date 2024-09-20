@@ -17,7 +17,7 @@ public class RoomManagerTests
     public void CreateRoom_ShouldReturnSuccessAndGenerateIds()
     {
         // Act
-        var success = _roomManager.CreateRoom("Test Room", 10, true, out var roomId);
+        var success = _roomManager.CreateRoom("Test Room", 10, true,  true, out var roomId);
 
         // Assert
         Assert.True(success);
@@ -32,10 +32,10 @@ public class RoomManagerTests
         var mockSocketHost = new Mock<WebSocket>();
         var mockSocketPeer = new Mock<WebSocket>();
 
-        _roomManager.CreateRoom("Test Room", 10, true, out var roomId);
+        _roomManager.CreateRoom("Test Room", 10, true, true, out var roomId);
 
         // Act
-        var success = _roomManager.AddPeer(roomId, mockSocketPeer.Object, out var peerId);
+        var success = _roomManager.AddPeer(roomId, mockSocketPeer.Object, true, out var peerId);
 
         // Assert
         Assert.True(success);
@@ -51,8 +51,8 @@ public class RoomManagerTests
         mockSocket.Setup(s => s.CloseAsync(It.IsAny<WebSocketCloseStatus>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _roomManager.CreateRoom("Test Room", 10, true, out var roomId);
-        _roomManager.AddPeer(roomId, mockSocket.Object, out var peerId);
+        _roomManager.CreateRoom("Test Room", 10, true, true, out var roomId);
+        _roomManager.AddPeer(roomId, mockSocket.Object, true, out var peerId);
 
         // Act
         await _roomManager.RemoveSocketAsync(roomId, peerId);
@@ -72,8 +72,8 @@ public class RoomManagerTests
         mockSocket1.Setup(s => s.State).Returns(WebSocketState.Open);
         mockSocket2.Setup(s => s.State).Returns(WebSocketState.Open);
 
-        _roomManager.CreateRoom("Test Room", 10, true, out var roomId);
-        _roomManager.AddPeer(roomId, mockSocket2.Object, out _);
+        _roomManager.CreateRoom("Test Room", 10, true, true, out var roomId);
+        _roomManager.AddPeer(roomId, mockSocket2.Object, true, out _);
 
         // Act
         await _roomManager.BroadcastAsync(roomId, "Test Message", mockSocket1.Object);
@@ -88,8 +88,8 @@ public class RoomManagerTests
     {
         // Arrange
         var mockSocket = new Mock<WebSocket>();
-        _roomManager.CreateRoom("Public Room", 10, true, out _);
-        _roomManager.CreateRoom("Private Room", 5, false, out _);
+        _roomManager.CreateRoom("Public Room", 10, true, true, out _);
+        _roomManager.CreateRoom("Private Room", 5, false, true, out _);
 
         // Act
         var publicRooms = _roomManager.GetPublicRooms();
@@ -104,8 +104,8 @@ public class RoomManagerTests
     {
         // Arrange
         var mockSocket = new Mock<WebSocket>();
-        _roomManager.CreateRoom("Room 1", 10, true,   out _);
-        _roomManager.CreateRoom("Room 2", 5, false,  out _);
+        _roomManager.CreateRoom("Room 1", 10, true,  true, out _);
+        _roomManager.CreateRoom("Room 2", 5, false,  true, out _);
 
         // Act
         var count = _roomManager.GetCount();
@@ -119,7 +119,7 @@ public class RoomManagerTests
     {
         // Arrange
         var mockSocket = new Mock<WebSocket>();
-        _roomManager.CreateRoom("Room 1", 10, true, out var roomId);
+        _roomManager.CreateRoom("Room 1", 10, true, true, out var roomId);
 
         // Act
         var exists = _roomManager.Contains(roomId);
@@ -133,8 +133,8 @@ public class RoomManagerTests
     {
         // Arrange
         var mockSocket = new Mock<WebSocket>();
-        _roomManager.CreateRoom("Room 1", 10, true, out var roomId);
-        _roomManager.AddPeer(roomId, mockSocket.Object, out var hostId);
+        _roomManager.CreateRoom("Room 1", 10, true, true, out var roomId);
+        _roomManager.AddPeer(roomId, mockSocket.Object, true, out var hostId);
 
         // Act
         var returnedHostId = _roomManager.GetHostId(roomId);

@@ -13,15 +13,17 @@ public class ConnectionHandler
 {
     private readonly IRoomManager _manager;
     private readonly WebSocket _webSocket;
+    private readonly bool _authorized;
     private bool _host;
     private string? _peerId;
     private string? _roomId;
 
-    public ConnectionHandler(WebSocket webSocket, IRoomManager manager)
+    public ConnectionHandler(WebSocket webSocket, IRoomManager manager, bool authorized)
     {
         _roomId = null;
         _peerId = null;
         _host = false;
+        _authorized = authorized;
         _webSocket = webSocket;
         _manager = manager;
     }
@@ -96,12 +98,12 @@ public class ConnectionHandler
 
         if (data != null)
         {
-            var success = _manager.AddPeer(data.RoomId, _webSocket, out _peerId);
+            var success = _manager.AddPeer(data.RoomId, _webSocket, !_authorized, out _peerId);
 
             if (!success)
             {
                 await _webSocket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData,
-                    "Provided room ID does not exist",
+                    "Provided room ID does not exist or unauthorized",
                     CancellationToken.None);
                 return;
             }

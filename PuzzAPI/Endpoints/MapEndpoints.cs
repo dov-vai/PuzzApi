@@ -1,10 +1,12 @@
 using System.Data;
+using System.Diagnostics;
 using System.Net;
 using System.Security.Authentication;
 using Microsoft.IdentityModel.Tokens;
 using PuzzAPI.ConnectionHandler.RoomManager;
 using PuzzAPI.Data.Models;
 using PuzzAPI.Data.Services;
+using PuzzAPI.Utils;
 using Host = PuzzAPI.ConnectionHandler.Types.Host;
 
 namespace PuzzAPI.Endpoints;
@@ -13,8 +15,9 @@ public static class MapEndpoints
 {
     public static WebApplication MapWebSocketEndpoint(this WebApplication app)
     {
-        app.Map("/ws", async (HttpContext context, IRoomManager manager) =>
+        app.Map("/ws", async (HttpContext context, JwtUtils jwt, IRoomManager manager) =>
         {
+            Debug.WriteLine("Received web socket request");
             if (!context.WebSockets.IsWebSocketRequest)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -23,7 +26,19 @@ public static class MapEndpoints
 
             using var ws = await context.WebSockets.AcceptWebSocketAsync();
 
-            var handler = new ConnectionHandler.ConnectionHandler(ws, manager);
+            var jwtToken = context.Request.Cookies["token"];
+            var authorized = false;
+            if (!string.IsNullOrEmpty(jwtToken))
+                try
+                {
+                    authorized = jwt.ValidateToken(jwtToken);
+                }
+                catch (SecurityTokenExpiredException)
+                {
+                    authorized = false;
+                }
+
+            var handler = new ConnectionHandler.ConnectionHandler(ws, manager, authorized);
 
             await handler.Run();
         });
@@ -142,7 +157,7 @@ public static class MapEndpoints
         app.MapPost("/host-game", async (HttpContext context, IRoomManager manager, Host host) =>
         {
             // TODO: authorization / guest system
-            manager.CreateRoom(host.Title, host.Pieces, host.Public, out var roomId);
+            manager.CreateRoom(host.Title, host.Pieces, host.Public, host.Guests, out var roomId);
 
             return Results.Json(new { RoomId = roomId });
         });
