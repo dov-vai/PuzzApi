@@ -15,9 +15,8 @@ public static class MapEndpoints
 {
     public static WebApplication MapWebSocketEndpoint(this WebApplication app)
     {
-        app.Map("/ws", async (HttpContext context, JwtUtils jwt, IRoomManager manager) =>
+        app.Map("/ws", async (HttpContext context, ITokenUtils jwt, IRoomManager manager) =>
         {
-            Debug.WriteLine("Received web socket request");
             if (!context.WebSockets.IsWebSocketRequest)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
